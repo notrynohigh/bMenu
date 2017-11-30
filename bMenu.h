@@ -27,8 +27,10 @@ typedef signed int     bM_S32;
 /******************************************************************************
  * define
  ******************************************************************************/
-#define  bM_ID         bM_U8
-#define  bM_Handle     bM_U32
+#define  bM_ID           bM_U8
+#define  bM_Handle       bM_U32
+#define  bM_OBJ_Handle   bM_Handle
+#define  bM_ITEM_Handle  bM_Handle
 
 #define  bM_NULL       ((void *)0)
 #define  bM_TRUE       1
@@ -55,21 +57,19 @@ typedef struct bM_Object
 {
     struct bM_Object *prev;
 	struct bM_Object *next;
-	bM_Handle        handle;
-	bM_Handle        hParent;
-	bM_Handle        hChild;
+	bM_OBJ_Handle    handle;
+	bM_ITEM_Handle   hParent;
 	bM_Item_t        *pFirstItem;
 	bM_U8            item_number;
 }bM_Object_t;
 
 typedef struct bM_Item
 {
-    struct bM_Info  *prev;
-	struct bM_Info  *next;
+	struct bM_Item  *prev;
+	struct bM_Item  *next;
 	bM_Object_t     *child;
-	bM_Object_t     *parent;
 	bM_CreateUI_t   create_ui;
-	bM_Handle       handle;
+	bM_ITEM_Handle  handle;
 }bM_Item_t;
 
 
@@ -122,12 +122,17 @@ bM_Result_t bM_Init(bM_DMC_Interface_t bM_DMC_Interface);
  *        attach an identification : all identifications must be different;
  * return: handle (0: error) (> 0)success
  */
-bM_Handle bM_CreateObject(bM_Handle hParent, bM_ID id);
+bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id);
 
 
 
-
-
+/**
+ * add item to bM module. the items which at the same level can be added.
+ * hobj: the bM object handle
+ * id  : the item identification.
+ * func: the UI create function
+ */
+bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func);
 
 
 

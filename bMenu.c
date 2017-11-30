@@ -10,9 +10,11 @@
  * global variable
  */
 static bM_DMC_Interface_t g_bM_DMC_Interface = {bM_NULL, bM_NULL};
-static bM_Object_t        g_bM_Manage_root = {bM_NULL, bM_NULL, 0, 0, 0, bM_NULL,0};
-static bM_U32             g_bM_OBJ_Number = 0;
+static bM_Object_t        g_bM_ManageRoot = {bM_NULL, bM_NULL, 0, 0, 0, bM_NULL,0};
+static bM_Object_t        *gp_bM_ManageRoot = &gp_bM_ManageRoot;
 
+static bM_U32             g_bM_OBJ_Number = 0;
+static bM_U32             g_bM_ItemNumber = 0;
 
 /**
  *  private defined
@@ -30,7 +32,11 @@ typedef enum
 	BM_ID_ITEM,
 }bM_ID_Types_t;
 
-
+typedef enum
+{
+	BM_HANDLE_OBJ,
+	BM_HANDLE_ITEM,
+}bM_HANDLE_Types_t;
 /******************************************************************************
  *  private functions
  ******************************************************************************/
@@ -53,12 +59,36 @@ static bM_Result_t _bM_AddObjectToManage(bM_Object_t *pbM_OBJ)
 	{
 		return BM_ERROR;
 	}
-	g_bM_Manage_root.prev->next = pbM_OBJ;
-	pbM_OBJ->next = &g_bM_Manage_root;
-	pbM_OBJ->prev = g_bM_Manage_root.prev;
-	g_bM_Manage_root.prev = pbM_OBJ;
+	gp_bM_ManageRoot->prev->next = pbM_OBJ;
+	pbM_OBJ->next = gp_bM_ManageRoot;
+	pbM_OBJ->prev = gp_bM_ManageRoot->prev;
+	gp_bM_ManageRoot->prev = pbM_OBJ;
 	return BM_SUCCESS;
 }
+
+static bM_Result_t _bM_AddItemToObject(bM_Object_t *pobj, bM_Item_t *pitem)
+{
+	if(pobj == bM_NULL || pitem == bM_NULL)
+	{
+		return BM_FALSE;
+	}
+	if(pobj->pFirstItem == NULL)
+	{
+		pobj->pFirstItem = pitem;
+		pitem->next = pitem;
+		pitem->prev = pitem;
+	}
+	else
+	{
+		pobj->pFirstItem->prev->next = pitem;
+		pitem->prev = pobj->pFirstItem->prev;
+		pitem->next = pobj->pFirstItem;
+		pobj->pFirstItem->prev = pitem;
+	}
+	pobj->item_number++;
+	return BM_SUCCESS;
+}
+
 
 static bM_ID _bM_GetIdFromHandle(bM_Handle handle, bM_ID_Types_t t)
 {
@@ -87,67 +117,50 @@ static bM_ID _bM_GetIdFromHandle(bM_Handle handle, bM_ID_Types_t t)
 }
 
 
-static bM_bool_t _bM_IsHandleExist(bM_Handle handle)
+static bM_Object_t *_bM_GetObjectFromManage(bM_OBJ_Handle hobj)
 {
-	bM_Object_t *pobj = g_bM_Manage_root.next;
-	bM_Item_t *pitem = g_bM_Manage_root.next->pFirstItem;
-    bM_U32 i = 0;
-	bM_ID obj_id = _bM_GetIdFromHandle(handle, BM_ID_OBJ);
-	if(g_bM_Manage_root.next == &g_bM_Manage_root)
+	bM_Object_t *pobj = gp_bM_ManageRoot->next;
+	bM_ID id = _bM_GetIdFromHandle(hobj, BM_ID_OBJ);
+	
+	if(hobj == bM_HANDLE_INVALID || pobj == gp_bM_ManageRoot)
 	{
-		return BM_FALSE;
+		return bM_NULL;
 	}
 	do
 	{
-		if(_bM_GetIdFromHandle(pobj->handle, BM_ID_OBJ) == obj_id)
+		if(_bM_GetIdFromHandle(pobj->handle, BM_ID_OBJ) == id)
 		{
-			pitem = pobj->pFirstItem;
-			for(i = 0;i < pobj->item_number;i++)
-			{
-				if(handle == pitem->handle)
-				{
-					return BM_TRUE;
-				}
-				pitem = pitem->next;
-			}
+			return pobj;
 		}
 		pobj = pobj->next;
-	}
-	while (pobj != &g_bM_Manage_root);
-	return BM_FALSE;
+	}while(pobj != gp_bM_ManageRoot);
+	return bM_NULL;
 }
 
-
-static bM_Result_t _bM_SetChildObjForItem(bM_Handle hParent, bM_Handle hObj)
+static bM_Item_t *_bM_GetItemtFromManage(bM_ITEM_Handle hitem)
 {
-	bM_Object_t *pobj = g_bM_Manage_root.next;
-	bM_Item_t *pitem = g_bM_Manage_root.next->pFirstItem;
-    bM_U32 i = 0;
-	bM_ID obj_id = _bM_GetIdFromHandle(hParent, BM_ID_OBJ);
-	if(g_bM_Manage_root.next == &g_bM_Manage_root || hParent == bM_HANDLE_INVALID)
+	bM_Object_t *pobj = _bM_GetObjectFromManage(hitem);
+	bM_Item_t *pitem = bM_NULL;
+	if(pobj == bM_NULL)
 	{
-		return BM_ERROR;
+		return bM_NULL;
 	}
+	if(pobj->pFirstItem == bM_NULL)
+	{
+		return bM_NULL;
+	}
+	pitem = pobj->pFirstItem;
 	do
 	{
-		if(_bM_GetIdFromHandle(pobj->handle, BM_ID_OBJ) == obj_id)
+		if(pitem->handle == hitem)
 		{
-			pitem = pobj->pFirstItem;
-			for(i = 0;i < pobj->item_number;i++)
-			{
-				if(hParent == pitem->handle)
-				{
-					pitem->child = hObj;
-					return BM_SUCCESS;
-				}
-				pitem = pitem->next;
-			}
+			return pitem;
 		}
-		pobj = pobj->next;
-	}
-	while (pobj != &g_bM_Manage_root);
-	return BM_ERROR;
+		pitem = pitem->next;
+	}while(pitem != pobj->pFirstItem);
+	return bM_NULL;
 }
+
 
 /******************************************************************************
  *  public functions
@@ -166,8 +179,8 @@ bM_Result_t bM_Init(bM_DMC_Interface_t bM_DMC_Interface)
 	g_bM_DMC_Interface.pFree = bM_DMC_Interface.pFree;
 	g_bM_DMC_Interface.pMalloc = bM_DMC_Interface.pMalloc;
 
-	g_bM_Manage_root.next = &g_bM_Manage_root;
-	g_bM_Manage_root.prev = &g_bM_Manage_root;
+	gp_bM_ManageRoot.next = gp_bM_ManageRoot;
+	gp_bM_ManageRoot.prev = gp_bM_ManageRoot;
     
 	return BM_SUCCESS;
 }
@@ -175,25 +188,18 @@ bM_Result_t bM_Init(bM_DMC_Interface_t bM_DMC_Interface)
 /**
  * create a new object and appoint its parent handle
  */
-bM_Handle bM_CreateObject(bM_Handle hParent, bM_ID id)
+bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id)
 {
     bM_Object_t *pbM_ObjTmp = bM_NULL;
-
-	if(hParent != bM_HANDLE_INVALID)
-	{
-		if(BM_FALSE == _bM_IsHandleExist(hParent))
-		{
-			return bM_HANDLE_INVALID;
-		}
-	}
-	pbM_ObjTmp = (bM_Info_t *)g_bM_DMC_Interface.pMalloc(sizeof(bM_Object_t));
+	bM_Item_t   *pitem = bM_NULL;
+	pitem = _bM_GetItemtFromManage(hParent);
+	pbM_ObjTmp = (bM_Object_t*)g_bM_DMC_Interface.pMalloc(sizeof(bM_Object_t));
 	if(pbM_ObjTmp == bM_NULL)
 	{
-		return BM_MEMORY_ERR;
+		return bM_HANDLE_INVALID;
 	}
     pbM_ObjTmp->handle = _bM_CreateHandle(id, g_bM_OBJ_Number + 1, 0);
-	pbM_ObjTmp->hChild = bM_HANDLE_INVALID;
-	pbM_ObjTmp->hParent = hParent;
+	pbM_ObjTmp->hParent = (pitem == bM_NULL) ? bM_HANDLE_INVALID : hParent;
     pbM_ObjTmp->item_number = 0;
 	pbM_ObjTmp->pFirstItem = bM_NULL;
 	if(_bM_AddObjectToManage(pbM_ObjTmp) != BM_SUCCESS)
@@ -202,14 +208,45 @@ bM_Handle bM_CreateObject(bM_Handle hParent, bM_ID id)
 		return bM_HANDLE_INVALID;
 	}
 
-	_bM_SetChildObjForItem(hParent, pbM_ObjTmp->handle);
+	if(pitem != bM_NULL)
+	{
+		pitem->child = pbM_ObjTmp->handle;
+	}
 	
 	return pbM_ObjTmp->handle;
 }
 
 
+/**
+ * Add items to bM object
+ */
+bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func)
+{
+	bM_Item_t *pitem = bM_NULL;
+	bM_Object_t *pobj = bM_NULL;
 
+	pobj = _bM_GetObjectFromManage(hobj);
+	if(pobj == bM_NULL)
+	{
+		return bM_HANDLE_INVALID;
+	}
+	pitem = (bM_Item_t *)g_bM_DMC_Interface.pMalloc(sizeof(bM_Item_t));
+	if(pitem == bM_NULL)
+	{
+		bM_Debug("memory error: %s\n\r", __func__);
+		return bM_HANDLE_INVALID;
+	}
 
+	pitem->child = bM_NULL;
+	pitem->create_ui = func;
+	pitem->handle = _bM_CreateHandle(id, _bM_GetIdFromHandle(hobj, BM_ID_OBJ), (g_bM_ItemNumber + 1));
+	if(_bM_AddItemToObject(pobj, pitem) != BM_SUCCESS)
+	{
+		g_bM_DMC_Interface.pFree(pitem);
+		return bM_HANDLE_INVALID;
+	}
+	return pitem->handle;
+}
 
 
 
