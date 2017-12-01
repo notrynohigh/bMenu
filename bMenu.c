@@ -11,8 +11,13 @@
  */
 static bM_DMC_Interface_t g_bM_DMC_Interface = {bM_NULL, bM_NULL};
 static bM_Object_t        g_bM_ManageRoot = {bM_NULL, bM_NULL, 0, 0, 0, bM_NULL,0};
-static bM_Object_t        *gp_bM_ManageRoot = &gp_bM_ManageRoot;
+static bM_Object_t* const gp_bM_ManageRoot = &gp_bM_ManageRoot;
+static bM_Object_t        *gp_bM_MenuEntryPoint = bM_NULL;
 
+static volatile bM_TaskManage_t    g_bM_TaskManage;
+/**
+ * be used to create handles
+ */
 static bM_U32             g_bM_OBJ_Number = 0;
 static bM_U32             g_bM_ItemNumber = 0;
 
@@ -37,6 +42,7 @@ typedef enum
 	BM_HANDLE_OBJ,
 	BM_HANDLE_ITEM,
 }bM_HANDLE_Types_t;
+
 /******************************************************************************
  *  private functions
  ******************************************************************************/
@@ -161,6 +167,76 @@ static bM_Item_t *_bM_GetItemtFromManage(bM_ITEM_Handle hitem)
 	return bM_NULL;
 }
 
+static void _bM_GetOBJorItemById(bM_ID id, bM_UserIdResult_t *result)
+{
+	bM_Object_t *pobj = gp_bM_ManageRoot->next;
+	bM_Item_t* pitem;
+	bM_U32 i = 0;
+	result->handle = bM_HANDLE_INVALID;
+	if(pobj == gp_bM_ManageRoot || pobj == bM_NULL)
+	{
+		return;
+	}
+	while(pobj != gp_bM_ManageRoot)
+	{
+		if(_bM_GetIdFromHandle(pobj->handle, BM_ID_USER) == id)
+		{
+			result->handle = pobj->handle;
+			result->result.pobj = pobj;
+			return;
+		}
+		else if(pobj->item_number > 0)
+		{
+			pitem = pobj->pFirstItem;
+			if(pitem != bM_NULL)
+			{
+				for(i = 0;i < pobj->item_number;i++)
+				{
+					if(_bM_GetIdFromHandle(pitem->handle, BM_ID_USER) == id)
+					{
+						result->handle = pitem->handle;
+						result->result.pitem = pitem;
+						return;
+					}
+					pitem = pitem->next;
+				}
+			}
+		}
+		pobj = pobj->next;
+	}
+}
+
+static void _bM_FreeAllResource()
+{
+	bM_Object_t *pobj = gp_bM_ManageRoot->next;
+	bM_Item_t* pitem, *pitem_temp;
+
+	while(pobj != gp_bM_ManageRoot && pobj != bM_NULL)
+	{
+		pitem = pobj->pFirstItem;
+		while(pitem != bM_NULL)
+		{
+			pitem_temp = pitem->next;
+			if(pitem_temp == pitem)
+			{
+				g_bM_DMC_Interface.pFree(pitem);
+				pitem = bM_NULL;
+			}
+			else
+			{
+				pitem->next = pitem_temp->next;
+				pitem_temp->next->prev = pitem;
+				g_bM_DMC_Interface.pFree(pitem_temp);
+				pitem_temp = bM_NULL;
+			}
+		}
+		pobj->pFirstItem = bM_NULL;
+		gp_bM_ManageRoot->next =  pobj->next;
+		pobj->next->prev = gp_bM_ManageRoot;
+		g_bM_DMC_Interface.pFree(pobj);
+		pobj = gp_bM_ManageRoot->next;
+	}
+}
 
 /******************************************************************************
  *  public functions
@@ -247,6 +323,127 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 	}
 	return pitem->handle;
 }
+
+
+/**
+ * appoint an object as the entry
+ */
+ bM_Result_t bM_SetMenuEntryPoint(bM_OBJ_Handle hobj)
+{
+	bM_Object_t *pobj_temp = bM_NULL;
+	if(hobj == bM_HANDLE_INVALID)
+	{
+		return BM_ERROR;
+	}
+	pobj_temp = _bM_GetObjectFromManage(hobj);
+	if(pobj_temp == bM_NULL)
+	{
+		return BM_ERROR;
+	}
+	gp_bM_MenuEntryPoint = pobj_temp;
+	g_bM_TaskManage.NewMessage.opt = BM_OPERATE_INIT;
+	g_bM_TaskManage.pCurrentObj = pobj_temp;
+	g_bM_TaskManage.pCurrentItem = pobj_temp->pFirstItem;
+	return BM_SUCCESS;
+}
+
+/**
+ * send operation message to bM management
+ */
+ bM_Result_t bM_SendMessage(bM_Operation_t opt, bM_ID id)
+ {
+ 	bM_Message_t msg;
+	if(opt == BM_OPERATE_INIT || opt == BM_OPERATE_NULL)
+	{
+		return BM_ERROR;
+	}
+	if(opt == BM_OPERATE_JUMP_TO)
+	{
+		_bM_GetOBJorItemById(id, &msg.result);
+		if(msg.result.handle == bM_HANDLE_INVALID)
+		{
+			return BM_ERROR;
+		}
+	}
+	msg.opt = opt;
+	memcpy(&g_bM_TaskManage.NewMessage, &msg, sizeof(bM_Message_t));
+    return BM_SUCCESS;
+ }
+
+/**
+ * free bM dynamic memory and deinit all global variable
+ */
+void bM_BMenuModuleEnd(void)
+{
+	_bM_FreeAllResource();
+	g_bM_ItemNumber = 0;
+	g_bM_OBJ_Number = 0;
+}
+
+/**
+ * bM Main Task
+ */
+void bM_BMenuModuleTask(void)
+{
+	bM_Item_t *pitem = bM_NULL;
+	switch (g_bM_TaskManage.NewMessage.opt)
+		{
+		case BM_OPERATE_INIT: 
+			{
+			    pitem = g_bM_TaskManage.pCurrentItem;
+				break;
+		    }
+		case BM_OPERATE_NEXT:
+			{
+				pitem = g_bM_TaskManage.pCurrentItem->next;
+				if(pitem == g_bM_TaskManage.pCurrentItem)
+				{
+					pitem = bM_NULL;
+				}
+				break;
+		    }
+		case BM_OPERATE_PREV:
+			{
+				pitem = g_bM_TaskManage.pCurrentItem->prev;
+				if(pitem == g_bM_TaskManage.pCurrentItem)
+				{
+					pitem = bM_NULL;
+				}
+				break;
+			}
+		case BM_OPERATE_GOTO_CHILD:
+			{
+				if(g_bM_TaskManage.pCurrentItem->child != bM_NULL)
+				{
+					pitem = g_bM_TaskManage.pCurrentItem->child->pFirstItem;
+					g_bM_TaskManage.pCurrentItem = pitem;
+					g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.pCurrentItem->child;
+				}
+				break;
+		    }
+		case BM_OPERATE_BACK_PARENT:
+			{
+				if(g_bM_TaskManage.pCurrentObj->hParent != bM_NULL)
+				{
+					pitem = g_bM_TaskManage.pCurrentObj->hParent;
+					g_bM_TaskManage.pCurrentItem = pitem;
+					g_bM_TaskManage.pCurrentObj = _bM_GetObjectFromManage(pitem->handle);
+				}
+				break;
+			}
+		default: break;
+		}
+	g_bM_TaskManage.NewMessage.opt = BM_OPERATE_NULL;
+	if(pitem->create_ui != bM_NULL)
+	{
+		pitem->create_ui();
+	}
+}
+
+
+
+
+
 
 
 
