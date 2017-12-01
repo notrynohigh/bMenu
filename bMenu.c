@@ -3,6 +3,8 @@
 /******************************************************************************
  * include
  ******************************************************************************/
+#include "stdio.h"
+#include "string.h"
 #include "bMenu.h"
 
 
@@ -10,8 +12,8 @@
  * global variable
  */
 static bM_DMC_Interface_t g_bM_DMC_Interface = {bM_NULL, bM_NULL};
-static bM_Object_t        g_bM_ManageRoot = {bM_NULL, bM_NULL, 0, 0, 0, bM_NULL,0};
-static bM_Object_t* const gp_bM_ManageRoot = &gp_bM_ManageRoot;
+static bM_Object_t        g_bM_ManageRoot = {bM_NULL, bM_NULL, 0, 0, bM_NULL,0};
+static bM_Object_t* const gp_bM_ManageRoot = &g_bM_ManageRoot;
 static bM_Object_t        *gp_bM_MenuEntryPoint = bM_NULL;
 
 static volatile bM_TaskManage_t    g_bM_TaskManage;
@@ -76,9 +78,9 @@ static bM_Result_t _bM_AddItemToObject(bM_Object_t *pobj, bM_Item_t *pitem)
 {
 	if(pobj == bM_NULL || pitem == bM_NULL)
 	{
-		return BM_FALSE;
+		return BM_ERROR;
 	}
-	if(pobj->pFirstItem == NULL)
+	if(pobj->pFirstItem == bM_NULL)
 	{
 		pobj->pFirstItem = pitem;
 		pitem->next = pitem;
@@ -255,8 +257,8 @@ bM_Result_t bM_Init(bM_DMC_Interface_t bM_DMC_Interface)
 	g_bM_DMC_Interface.pFree = bM_DMC_Interface.pFree;
 	g_bM_DMC_Interface.pMalloc = bM_DMC_Interface.pMalloc;
 
-	gp_bM_ManageRoot.next = gp_bM_ManageRoot;
-	gp_bM_ManageRoot.prev = gp_bM_ManageRoot;
+	gp_bM_ManageRoot->next = gp_bM_ManageRoot;
+	gp_bM_ManageRoot->prev = gp_bM_ManageRoot;
     
 	return BM_SUCCESS;
 }
@@ -275,7 +277,7 @@ bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id)
 		return bM_HANDLE_INVALID;
 	}
     pbM_ObjTmp->handle = _bM_CreateHandle(id, g_bM_OBJ_Number + 1, 0);
-	pbM_ObjTmp->hParent = (pitem == bM_NULL) ? bM_HANDLE_INVALID : hParent;
+	pbM_ObjTmp->pParent = pitem;
     pbM_ObjTmp->item_number = 0;
 	pbM_ObjTmp->pFirstItem = bM_NULL;
 	if(_bM_AddObjectToManage(pbM_ObjTmp) != BM_SUCCESS)
@@ -286,7 +288,7 @@ bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id)
 
 	if(pitem != bM_NULL)
 	{
-		pitem->child = pbM_ObjTmp->handle;
+		pitem->child = pbM_ObjTmp;
 	}
 	
 	return pbM_ObjTmp->handle;
@@ -366,7 +368,7 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 		}
 	}
 	msg.opt = opt;
-	memcpy(&g_bM_TaskManage.NewMessage, &msg, sizeof(bM_Message_t));
+	memcpy((void *)(&g_bM_TaskManage.NewMessage), &msg, sizeof(bM_Message_t));
     return BM_SUCCESS;
  }
 
@@ -413,7 +415,7 @@ void bM_BMenuModuleTask(void)
 			}
 		case BM_OPERATE_GOTO_CHILD:
 			{
-				if(g_bM_TaskManage.pCurrentItem->child != bM_NULL)
+				if(g_bM_TaskManage.pCurrentItem->child != bM_NULL && g_bM_TaskManage.pCurrentObj != gp_bM_MenuEntryPoint)
 				{
 					pitem = g_bM_TaskManage.pCurrentItem->child->pFirstItem;
 					g_bM_TaskManage.pCurrentItem = pitem;
@@ -423,9 +425,9 @@ void bM_BMenuModuleTask(void)
 		    }
 		case BM_OPERATE_BACK_PARENT:
 			{
-				if(g_bM_TaskManage.pCurrentObj->hParent != bM_NULL)
+				if(g_bM_TaskManage.pCurrentObj->pParent != bM_NULL)
 				{
-					pitem = g_bM_TaskManage.pCurrentObj->hParent;
+					pitem = g_bM_TaskManage.pCurrentObj->pParent;
 					g_bM_TaskManage.pCurrentItem = pitem;
 					g_bM_TaskManage.pCurrentObj = _bM_GetObjectFromManage(pitem->handle);
 				}

@@ -74,7 +74,7 @@ typedef enum
 
 
 /** typedef functions section  ---------------------------------------------------*/
-typedef void (*bM_CreateUI_t)(void *);
+typedef void (*bM_CreateUI_t)(void);
 typedef void* (*bM_Malloc)(int);
 typedef void (*bM_Free)(void *);
 
@@ -84,28 +84,28 @@ typedef void (*bM_Free)(void *);
 /**
  * bM object struct
  */
-typedef struct bM_Object
+struct bM_Object
 {
     struct bM_Object *prev;
 	struct bM_Object *next;
 	bM_OBJ_Handle    handle;
-	bM_ITEM_Handle   hParent;
-	bM_Item_t        *pFirstItem;
+	struct bM_Item   *pParent;
+	struct bM_Item   *pFirstItem;
 	bM_U8            item_number;
-}bM_Object_t;
-
+};
+typedef struct bM_Object bM_Object_t;
 /**
  * bM item struct
  */
-typedef struct bM_Item
+struct bM_Item
 {
 	struct bM_Item  *prev;
 	struct bM_Item  *next;
 	bM_Object_t     *child;
 	bM_CreateUI_t   create_ui;
 	bM_ITEM_Handle  handle;
-}bM_Item_t;
-
+};
+typedef struct bM_Item bM_Item_t;
 
 typedef struct
 {
