@@ -78,6 +78,7 @@ static bM_Result_t _bM_AddItemToObject(bM_Object_t *pobj, bM_Item_t *pitem)
 {
 	if(pobj == bM_NULL || pitem == bM_NULL)
 	{
+		bM_Debug("[%s]param error\n\r", __func__);
 		return BM_ERROR;
 	}
 	if(pobj->pFirstItem == bM_NULL)
@@ -276,7 +277,7 @@ bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id)
 	{
 		return bM_HANDLE_INVALID;
 	}
-    pbM_ObjTmp->handle = _bM_CreateHandle(id, g_bM_OBJ_Number + 1, 0);
+    pbM_ObjTmp->handle = _bM_CreateHandle(id, ++g_bM_OBJ_Number, 0);
 	pbM_ObjTmp->pParent = pitem;
     pbM_ObjTmp->item_number = 0;
 	pbM_ObjTmp->pFirstItem = bM_NULL;
@@ -306,6 +307,7 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 	pobj = _bM_GetObjectFromManage(hobj);
 	if(pobj == bM_NULL)
 	{
+		bM_Debug("error: cant find obj\n\r");
 		return bM_HANDLE_INVALID;
 	}
 	pitem = (bM_Item_t *)g_bM_DMC_Interface.pMalloc(sizeof(bM_Item_t));
@@ -317,9 +319,10 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 
 	pitem->child = bM_NULL;
 	pitem->create_ui = func;
-	pitem->handle = _bM_CreateHandle(id, _bM_GetIdFromHandle(hobj, BM_ID_OBJ), (g_bM_ItemNumber + 1));
+	pitem->handle = _bM_CreateHandle(id, _bM_GetIdFromHandle(hobj, BM_ID_OBJ), (++g_bM_ItemNumber));
 	if(_bM_AddItemToObject(pobj, pitem) != BM_SUCCESS)
 	{
+		bM_Debug("error: add item\n\r");
 		g_bM_DMC_Interface.pFree(pitem);
 		return bM_HANDLE_INVALID;
 	}
@@ -388,6 +391,7 @@ void bM_BMenuModuleEnd(void)
 void bM_BMenuModuleTask(void)
 {
 	bM_Item_t *pitem = bM_NULL;
+	bM_Handle hTemp = bM_HANDLE_INVALID;
 	switch (g_bM_TaskManage.NewMessage.opt)
 		{
 		case BM_OPERATE_INIT: 
@@ -402,6 +406,10 @@ void bM_BMenuModuleTask(void)
 				{
 					pitem = bM_NULL;
 				}
+				else
+				{
+					g_bM_TaskManage.pCurrentItem = pitem;
+				}
 				break;
 		    }
 		case BM_OPERATE_PREV:
@@ -411,21 +419,28 @@ void bM_BMenuModuleTask(void)
 				{
 					pitem = bM_NULL;
 				}
+				else
+				{
+					g_bM_TaskManage.pCurrentItem = pitem;
+				}
 				break;
 			}
 		case BM_OPERATE_GOTO_CHILD:
 			{
-				if(g_bM_TaskManage.pCurrentItem->child != bM_NULL && g_bM_TaskManage.pCurrentObj != gp_bM_MenuEntryPoint)
+				if(g_bM_TaskManage.pCurrentItem->child != bM_NULL)
 				{
 					pitem = g_bM_TaskManage.pCurrentItem->child->pFirstItem;
-					g_bM_TaskManage.pCurrentItem = pitem;
-					g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.pCurrentItem->child;
+					if (pitem != bM_NULL)
+					{
+						g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.pCurrentItem->child;
+						g_bM_TaskManage.pCurrentItem = pitem;
+					}
 				}
 				break;
 		    }
 		case BM_OPERATE_BACK_PARENT:
 			{
-				if(g_bM_TaskManage.pCurrentObj->pParent != bM_NULL)
+				if(g_bM_TaskManage.pCurrentObj->pParent != bM_NULL && g_bM_TaskManage.pCurrentObj != gp_bM_MenuEntryPoint)
 				{
 					pitem = g_bM_TaskManage.pCurrentObj->pParent;
 					g_bM_TaskManage.pCurrentItem = pitem;
@@ -433,12 +448,44 @@ void bM_BMenuModuleTask(void)
 				}
 				break;
 			}
+		case BM_OPERATE_JUMP_TO:
+			{
+				hTemp = g_bM_TaskManage.NewMessage.result.handle;
+				if (hTemp != bM_HANDLE_INVALID)
+				{
+					if (_bM_GetIdFromHandle(hTemp, BM_ID_ITEM) == 0x00)
+					{
+						pitem = g_bM_TaskManage.NewMessage.result.result.pobj->pFirstItem;
+						if (pitem == bM_NULL || pitem == g_bM_TaskManage.pCurrentItem)
+						{
+							pitem = bM_NULL;
+							break;
+						}
+						g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.NewMessage.result.result.pobj;
+						g_bM_TaskManage.pCurrentItem = pitem;
+					}
+					else
+					{
+						pitem = g_bM_TaskManage.NewMessage.result.result.pitem;
+						if (pitem == g_bM_TaskManage.pCurrentItem)
+						{
+							pitem = bM_NULL;
+							break;
+						}
+						g_bM_TaskManage.pCurrentObj = _bM_GetObjectFromManage(pitem->handle);
+						g_bM_TaskManage.pCurrentItem = pitem;
+					}
+				}
+			}
 		default: break;
 		}
 	g_bM_TaskManage.NewMessage.opt = BM_OPERATE_NULL;
-	if(pitem->create_ui != bM_NULL)
+	if(pitem != bM_NULL)
 	{
-		pitem->create_ui();
+		if (pitem->create_ui != bM_NULL)
+		{
+			pitem->create_ui();
+		}
 	}
 }
 
