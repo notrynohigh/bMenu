@@ -1,5 +1,9 @@
-
-
+/*****************************************************************************
+ *      Copyright (C) 2017-2018  Bean  email: notrynohigh@outlook.com
+ *      Author: Bean 
+ *      File: bMenu.c  Version: v0.0.1
+ *      Everyone can modify and use this file
+ *****************************************************************************/
 /******************************************************************************
  * include
  ******************************************************************************/
@@ -7,31 +11,29 @@
 #include "string.h"
 #include "bMenu.h"
 
-
-/**
+ /******************************************************************************
  * global variable
- */
+ ******************************************************************************/
+
 static bM_DMC_Interface_t g_bM_DMC_Interface = {bM_NULL, bM_NULL};
 static bM_Object_t        g_bM_ManageRoot = {bM_NULL, bM_NULL, 0, 0, bM_NULL,0};
 static bM_Object_t* const gp_bM_ManageRoot = &g_bM_ManageRoot;
 static bM_Object_t        *gp_bM_MenuEntryPoint = bM_NULL;
 
 static volatile bM_TaskManage_t    g_bM_TaskManage;
-/**
- * be used to create handles
- */
+/** be used to create handles     */
 static bM_U32             g_bM_OBJ_Number = 0;
 static bM_U32             g_bM_ItemNumber = 0;
 
-/**
- *  private defined
- */
+ /******************************************************************************
+ * private defined
+ ******************************************************************************/
  /* bM module version number */
 #define bM_VERSION    "V0.0.1"
 
-/**
+ /******************************************************************************
  * private typedef
- */
+ ******************************************************************************/
 typedef enum
 {
 	BM_ID_USER,
@@ -489,6 +491,9 @@ void bM_BMenuModuleTask(void)
 	}
 }
 
+/******************************************************************************
+* End !
+******************************************************************************/
 
 
 
