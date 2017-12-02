@@ -158,7 +158,7 @@ typedef struct
 bM_Result_t bM_Init(bM_DMC_Interface_t bM_DMC_Interface);
 
 /**
- * create a basic menu object. if it's independent, parent = bM_HANDLE_INVALID
+ * create a menu object. if it's independent, parent = bM_HANDLE_INVALID
  * param: the handle of parent or bM_HANDLE_INVALID
  *        attach an identification : all identifications must be different;
  * return: handle (0: error) (> 0)success

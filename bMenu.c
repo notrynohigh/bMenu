@@ -172,6 +172,12 @@ static bM_Item_t *_bM_GetItemtFromManage(bM_ITEM_Handle hitem)
 	return bM_NULL;
 }
 
+/**
+ * find out object or item by user_id
+ * id: user_id
+ * result: output the result.
+ *         error: result->handle == bM_HANDLE_INVALID 
+ */
 static void _bM_GetOBJorItemById(bM_ID id, bM_UserIdResult_t *result)
 {
 	bM_Object_t *pobj = gp_bM_ManageRoot->next;
