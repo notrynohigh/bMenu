@@ -83,8 +83,11 @@ for example:
   
   then:
   you can call bM_SendMessage() to control switching.
+  
   for example:
+  
   bM_SendMessage(BM_OPERATE_NEXT, 0);   // to show the next item 
+  
   bM_SendMessage(BM_OPERATE_JUMP_TO, USER_ID_ITEM5);   //to show the item5
   
   
