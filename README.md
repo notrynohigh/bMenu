@@ -7,7 +7,8 @@ using process:
 3. building your menu structure
 
 for example:
-/**************************************************************
+/**************************************************************/
+
     item1----item2-----item3-----item4
                |
                item5----item6----item7
@@ -18,18 +19,14 @@ for example:
   it's a four levels menu. then, divide it:
   create four objects by bM_CreateObject();
   add items and creating UI function to the object by bM_AddItemToObject();
-  object1     
-      |
-      item1----item2----item3----item4
-  object2
-      |
-      item5----item6----item7
-  object3
-      |
-      item8----item9
-  object4
-      |
-      item10
+  object1 {item1----item2----item3----item4}
+  
+  object2 {item5----item6----item7}
+  
+  object3 {item8----item9}
+  
+  object4 {item10}
+  
  
  user_id of every object and item must be different.
  maybe you can do that through enum:
@@ -98,7 +95,7 @@ for example:
   
   Thanks! 
 
-***************************************************************/
+/***************************************************************/
 
 
 
