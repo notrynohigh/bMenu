@@ -31,27 +31,29 @@ for example:
   
  
  user_id of every object and item must be different.
+ 
  maybe you can do that through enum:
+ 
    
    enum
    {
-     USER_ID_OBJECT_1,
-     USER_ID_ITEM1,
-     USER_ID_ITEM2,
-     USER_ID_ITME3,
-     USER_ID_ITEM4,
-     USER_ID_OBJECT_2,
-     USER_ID_ITEM5,
-     USER_ID_ITEM6,
-     USER_ID_ITEM7,
-     USER_ID_OBJECT_3,
-     USER_ID_ITEM8,
-     USER_ID_ITEM9,
-     USER_ID_OBJECT_4,
-     USER_ID_ITEM10
+   USER_ID_OBJECT_1,
+   USER_ID_ITEM1,
+   USER_ID_ITEM2,
+   USER_ID_ITME3,
+   USER_ID_ITEM4,
+   USER_ID_OBJECT_2,
+   USER_ID_ITEM5,
+   USER_ID_ITEM6,
+   USER_ID_ITEM7,
+   USER_ID_OBJECT_3,
+   USER_ID_ITEM8,
+   USER_ID_ITEM9,
+   USER_ID_OBJECT_4,
+   USER_ID_ITEM10
    };
-  example_func   
-  {
+   example_func
+   {
       bM_OBJ_Handle  hobj, hobj_tmp;
       bM_ITEM_Handle hItem;
       
