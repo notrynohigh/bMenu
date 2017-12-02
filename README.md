@@ -7,6 +7,7 @@ using process:
 3. building your menu structure
 
 for example:
+
 /**************************************************************/
 
     item1----item2-----item3-----item4
@@ -19,6 +20,7 @@ for example:
   it's a four levels menu. then, divide it:
   create four objects by bM_CreateObject();
   add items and creating UI function to the object by bM_AddItemToObject();
+  
   object1 {item1----item2----item3----item4}
   
   object2 {item5----item6----item7}
