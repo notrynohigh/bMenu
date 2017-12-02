@@ -52,10 +52,11 @@ for example:
    USER_ID_OBJECT_4,
    USER_ID_ITEM10
    };
+   
    example_func
    {
-      bM_OBJ_Handle  hobj, hobj_tmp;
-      bM_ITEM_Handle hItem;
+   bM_OBJ_Handle  hobj, hobj_tmp;
+   bM_ITEM_Handle hItem;
       
       hobj = bM_CreateObject(bM_HANDLE_INVALID, USER_ID_OBJECT_1);
       bM_AddItemToObject(hobj, USER_ID_ITEM1, func1);
