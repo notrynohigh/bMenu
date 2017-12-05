@@ -25,6 +25,10 @@ static volatile bM_TaskManage_t    g_bM_TaskManage;
 static bM_U32             g_bM_OBJ_Number = 0;
 static bM_U32             g_bM_ItemNumber = 0;
 
+#if BM_OS_ENABLE == 0
+static bM_bool_t g_bM_Semaphor = BM_FALSE;
+#endif
+
  /******************************************************************************
  * private defined
  ******************************************************************************/
@@ -50,6 +54,41 @@ typedef enum
 /******************************************************************************
  *  private functions
  ******************************************************************************/
+
+static bM_Result_t bM_GiveSemaphore()
+{
+#if BM_OS_ENABLE
+	//add your code ....
+#else
+	if (g_bM_Semaphor == BM_FALSE)
+	{
+		g_bM_Semaphor = BM_TRUE;
+		return BM_SUCCESS;
+	}
+	else
+	{
+		return BM_ERROR;
+	}
+#endif
+}
+
+static bM_Result_t bM_TakeSemaphore()
+{
+#if BM_OS_ENABLE
+	//add your code ....
+#else
+	if (g_bM_Semaphor == BM_TRUE)
+	{
+		g_bM_Semaphor = BM_FALSE;
+		return BM_SUCCESS;
+	}
+	else
+	{
+		return BM_ERROR;
+	}
+#endif
+}
+
 /**
  * assemble bM_Handle [8bits reserve][8bits id][8bits obj_index][8bits item_index]
  */
@@ -404,6 +443,7 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 	{
 		pobj_temp->pFirstItem->visible = BM_TRUE;
 	}
+	bM_GiveSemaphore();
 	return BM_SUCCESS;
 }
 
@@ -427,7 +467,7 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 	}
 	msg.opt = opt;
 	memcpy((void *)(&g_bM_TaskManage.NewMessage), &msg, sizeof(bM_Message_t));
-    return BM_SUCCESS;
+	return bM_GiveSemaphore();
  }
 
 /**
@@ -447,6 +487,10 @@ void bM_BMenuModuleTask(void)
 {
 	bM_Item_t *pitem = bM_NULL;
 	bM_Handle hTemp = bM_HANDLE_INVALID;
+	if (BM_SUCCESS != bM_TakeSemaphore())
+	{
+		return;
+	}
 	switch (g_bM_TaskManage.NewMessage.opt)
 		{
 		case BM_OPERATE_INIT: 

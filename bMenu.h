@@ -21,7 +21,7 @@ typedef signed short   bM_S16;
 typedef unsigned int   bM_U32;
 typedef signed int     bM_S32;
 
-/* Debug interface */
+/** Debug interface */
 #define BM_DEBUG_ENABLE        1     
 
 #if BM_DEBUG_ENABLE
@@ -29,6 +29,18 @@ typedef signed int     bM_S32;
 #else
     #define bM_Debug(...)
 #endif
+
+/** OS support  */
+#define   BM_OS_ENABLE         0
+#if BM_OS_ENABLE
+	#include "xxxos.h"
+#endif
+/**
+ * if your system supports OS, then please complete these two funcions :
+ * bM_Result_t bM_GiveSemaphore(void); 
+ * bM_Result_t bM_TakeSemaphore(void);
+ */
+
 /******************************************************************************
  * define
  ******************************************************************************/
