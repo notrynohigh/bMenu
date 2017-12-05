@@ -183,9 +183,8 @@ bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id);
  * hobj: the bM object handle
  * id  : the item identification.
  * func: the UI create function
- * visible: BM_TRUE or BM_FALSE
  */
-bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func, bM_bool_t visible);
+bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func);
 
 /**
  * appoint an object as the entry point.

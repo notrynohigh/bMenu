@@ -388,7 +388,7 @@ bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id)
 /**
  * Add items to bM object
  */
-bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func, bM_bool_t visible)
+bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func)
 {
 	bM_Item_t *pitem = bM_NULL;
 	bM_Object_t *pobj = bM_NULL;
@@ -408,7 +408,7 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 
 	pitem->child = bM_NULL;
 	pitem->create_ui = func;
-	pitem->visible = visible;
+	pitem->visible = BM_TRUE;
 	pitem->handle = _bM_CreateHandle(id, _bM_GetIdFromHandle(hobj, BM_ID_OBJ), (++g_bM_ItemNumber));
 	if(_bM_AddItemToObject(pobj, pitem) != BM_SUCCESS)
 	{
