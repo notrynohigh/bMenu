@@ -249,6 +249,48 @@ static void _bM_FreeAllResource()
 	}
 }
 
+/**
+ * direction : BM_TRUE(next)  BM_FALSE(prev)
+ */
+static bM_Item_t* _bM_FindOutNextItemToShow(bM_Item_t *pCurrentItem, bM_bool_t direction)
+{
+	bM_Item_t *ptemp = bM_NULL;
+	if (pCurrentItem == bM_NULL)
+	{
+		return bM_NULL;
+	}
+	ptemp = (direction == BM_TRUE) ? pCurrentItem->next : pCurrentItem->prev;
+	while (ptemp != pCurrentItem)
+	{
+		if (ptemp->visible == BM_TRUE)
+		{
+			return ptemp;
+		}
+		ptemp = (direction == BM_TRUE) ? ptemp->next : ptemp->prev;
+	}
+	return bM_NULL;
+}
+
+static bM_Item_t* _bM_OperationGotoChild(bM_Object_t *pobj)
+{
+	bM_Item_t *pitem = bM_NULL;
+	if (pobj != bM_NULL)
+	{
+		/** child valid */
+		pitem = pobj->pFirstItem;
+		if (pitem != bM_NULL)
+		{
+			/** the first item valid */
+			if (pitem->visible == BM_FALSE)
+			{
+				/** the first item can be shown, so find next */
+				pitem = _bM_FindOutNextItemToShow(pitem, BM_TRUE);
+			}
+		}
+	}
+	return pitem;
+}
+
 /******************************************************************************
  *  public functions
  ******************************************************************************/
@@ -307,7 +349,7 @@ bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id)
 /**
  * Add items to bM object
  */
-bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func)
+bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func, bM_bool_t visible)
 {
 	bM_Item_t *pitem = bM_NULL;
 	bM_Object_t *pobj = bM_NULL;
@@ -327,6 +369,7 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 
 	pitem->child = bM_NULL;
 	pitem->create_ui = func;
+	pitem->visible = visible;
 	pitem->handle = _bM_CreateHandle(id, _bM_GetIdFromHandle(hobj, BM_ID_OBJ), (++g_bM_ItemNumber));
 	if(_bM_AddItemToObject(pobj, pitem) != BM_SUCCESS)
 	{
@@ -357,6 +400,10 @@ bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t fu
 	g_bM_TaskManage.NewMessage.opt = BM_OPERATE_INIT;
 	g_bM_TaskManage.pCurrentObj = pobj_temp;
 	g_bM_TaskManage.pCurrentItem = pobj_temp->pFirstItem;
+	if (pobj_temp->pFirstItem != bM_NULL)
+	{
+		pobj_temp->pFirstItem->visible = BM_TRUE;
+	}
 	return BM_SUCCESS;
 }
 
@@ -409,12 +456,8 @@ void bM_BMenuModuleTask(void)
 		    }
 		case BM_OPERATE_NEXT:
 			{
-				pitem = g_bM_TaskManage.pCurrentItem->next;
-				if(pitem == g_bM_TaskManage.pCurrentItem)
-				{
-					pitem = bM_NULL;
-				}
-				else
+				pitem = _bM_FindOutNextItemToShow(g_bM_TaskManage.pCurrentItem, BM_TRUE);
+				if (pitem != bM_NULL)
 				{
 					g_bM_TaskManage.pCurrentItem = pitem;
 				}
@@ -422,12 +465,8 @@ void bM_BMenuModuleTask(void)
 		    }
 		case BM_OPERATE_PREV:
 			{
-				pitem = g_bM_TaskManage.pCurrentItem->prev;
-				if(pitem == g_bM_TaskManage.pCurrentItem)
-				{
-					pitem = bM_NULL;
-				}
-				else
+				pitem = _bM_FindOutNextItemToShow(g_bM_TaskManage.pCurrentItem, BM_FALSE);
+				if (pitem != bM_NULL)
 				{
 					g_bM_TaskManage.pCurrentItem = pitem;
 				}
@@ -435,14 +474,11 @@ void bM_BMenuModuleTask(void)
 			}
 		case BM_OPERATE_GOTO_CHILD:
 			{
-				if(g_bM_TaskManage.pCurrentItem->child != bM_NULL)
+				pitem = _bM_OperationGotoChild(g_bM_TaskManage.pCurrentItem->child);
+				if (pitem != bM_NULL)
 				{
-					pitem = g_bM_TaskManage.pCurrentItem->child->pFirstItem;
-					if (pitem != bM_NULL)
-					{
-						g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.pCurrentItem->child;
-						g_bM_TaskManage.pCurrentItem = pitem;
-					}
+					g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.pCurrentItem->child;
+					g_bM_TaskManage.pCurrentItem = pitem;
 				}
 				break;
 		    }
@@ -463,25 +499,29 @@ void bM_BMenuModuleTask(void)
 				{
 					if (_bM_GetIdFromHandle(hTemp, BM_ID_ITEM) == 0x00)
 					{
-						pitem = g_bM_TaskManage.NewMessage.result.result.pobj->pFirstItem;
+						pitem = _bM_OperationGotoChild(g_bM_TaskManage.NewMessage.result.result.pobj);
 						if (pitem == bM_NULL || pitem == g_bM_TaskManage.pCurrentItem)
 						{
 							pitem = bM_NULL;
-							break;
 						}
-						g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.NewMessage.result.result.pobj;
-						g_bM_TaskManage.pCurrentItem = pitem;
+						else
+						{
+							g_bM_TaskManage.pCurrentObj = g_bM_TaskManage.NewMessage.result.result.pobj;
+							g_bM_TaskManage.pCurrentItem = pitem;
+						}
 					}
 					else
 					{
 						pitem = g_bM_TaskManage.NewMessage.result.result.pitem;
-						if (pitem == g_bM_TaskManage.pCurrentItem)
+						if (pitem == g_bM_TaskManage.pCurrentItem || pitem->visible == BM_FALSE)
 						{
 							pitem = bM_NULL;
-							break;
 						}
-						g_bM_TaskManage.pCurrentObj = _bM_GetObjectFromManage(pitem->handle);
-						g_bM_TaskManage.pCurrentItem = pitem;
+						else
+						{
+							g_bM_TaskManage.pCurrentObj = _bM_GetObjectFromManage(pitem->handle);
+							g_bM_TaskManage.pCurrentItem = pitem;
+						}
 					}
 				}
 			}
@@ -496,6 +536,40 @@ void bM_BMenuModuleTask(void)
 		}
 	}
 }
+
+bM_Result_t bM_ChangeVisibleStatus(bM_ID id, bM_bool_t visible)
+{
+	bM_UserIdResult_t tmp_result;
+	_bM_GetOBJorItemById(id, &tmp_result);
+	if(tmp_result.handle == BM_HANDLE_ITEM)
+	{
+		bM_Debug("invalid id !\n\r");
+		return BM_ERROR;
+	}
+	if (_bM_GetIdFromHandle(tmp_result.handle, BM_ID_ITEM) == 0x00)
+	{
+		bM_Debug("sorry, cant set for object !\n\r");
+		return BM_ERROR;
+	}
+	if (gp_bM_MenuEntryPoint->pFirstItem != bM_NULL)
+	{
+		if (_bM_GetIdFromHandle(gp_bM_MenuEntryPoint->pFirstItem, BM_ID_USER) == id)
+		{
+			bM_Debug("sorry, cant set for entry first item !\n\r");
+			return BM_ERROR;
+		}
+	}
+	tmp_result.result.pitem->visible = visible;
+	return BM_SUCCESS;
+}
+
+
+bM_ID bM_GetUseridOfCurrentItem()
+{
+	return _bM_GetIdFromHandle(g_bM_TaskManage.pCurrentItem->handle, BM_ID_USER);
+}
+
+
 
 /******************************************************************************
 * End !

@@ -109,6 +109,7 @@ struct bM_Item
 	bM_Object_t     *child;
 	bM_CreateUI_t   create_ui;
 	bM_ITEM_Handle  handle;
+	bM_bool_t       visible;
 };
 typedef struct bM_Item bM_Item_t;
 
@@ -170,8 +171,9 @@ bM_OBJ_Handle bM_CreateObject(bM_ITEM_Handle hParent, bM_ID id);
  * hobj: the bM object handle
  * id  : the item identification.
  * func: the UI create function
+ * visible: BM_TRUE or BM_FALSE
  */
-bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func);
+bM_ITEM_Handle bM_AddItemToObject(bM_OBJ_Handle hobj, bM_ID id, bM_CreateUI_t func, bM_bool_t visible);
 
 /**
  * appoint an object as the entry point.
@@ -190,6 +192,19 @@ void bM_BMenuModuleTask(void);
 
 /** destroy bM module */
 void bM_BMenuModuleEnd(void);
+
+/** 
+ * change item's visiable 
+ * id: user id
+ * visible: BM_TRUE or BM_FALSE
+ */
+bM_Result_t bM_ChangeVisibleStatus(bM_ID id, bM_bool_t visible);
+
+/**
+ * get userid of current item
+ * return : userid
+ */
+bM_ID bM_GetUseridOfCurrentItem(void);
 
 /******************************************************************************
  * Reserve ! 
