@@ -1,14 +1,16 @@
 # bMenu
+---------
 a common frame for  menu, just for fun!
-
+--------
 using process:
-1. add bMenu.c and bMenu.h to your project .
-2. calling bM_Init() function. add malloc and free interface
-3. building your menu structure
+--------
+>>1. add bMenu.c and bMenu.h to your project .<br>
+>>2. calling bM_Init() function. add malloc and free interface<br>
+>>3. building your menu structure<br>
 
-for example:
+for example:<br>
+----------
 
-/**************************************************************/
 
     item1----item2-----item3-----item4
                |
@@ -17,24 +19,19 @@ for example:
                           item8--item9
                           |
                           item10
-  it's a four levels menu. then, divide it:
-  create four objects by bM_CreateObject();
-  add items and creating UI function to the object by bM_AddItemToObject();
+  it's a four levels menu. then, divide it:<br>
+  create four objects by bM_CreateObject();<br>
+  add items and creating UI function to the object by `bM_AddItemToObject()`;<br>
   
-  object1 {item1----item2----item3----item4}
-  
-  object2 {item5----item6----item7}
-  
-  object3 {item8----item9}
-  
-  object4 {item10}
+  object1 {item1----item2----item3----item4}<br>
+  object2 {item5----item6----item7}<br>
+  object3 {item8----item9}<br>
+  object4 {item10}<br>
   
  
- user_id of every object and item must be different.
- 
- maybe you can do that through enum:
- 
-   
+ user_id of every object and item must be different.<br>
+ maybe you can do that through enum:<br>
+```C
    enum
    {
    USER_ID_OBJECT_1,
@@ -55,8 +52,8 @@ for example:
    
    example_func
    {
-   bM_OBJ_Handle  hobj, hobj_tmp;
-   bM_ITEM_Handle hItem;
+      bM_OBJ_Handle  hobj, hobj_tmp;
+      bM_ITEM_Handle hItem;
       
       hobj = bM_CreateObject(bM_HANDLE_INVALID, USER_ID_OBJECT_1);
       bM_AddItemToObject(hobj, USER_ID_ITEM1, func1);
@@ -79,31 +76,31 @@ for example:
       //then set the entry point:
       bM_SetMenuEntryPoint(hobj);      
   }
-  
+ ``` 
   then the menu structure has been created.
   
-  add bM_BMenuModuleTask()  to while(1)
+  add `bM_BMenuModuleTask()`  to `while(1)`
   
   then:
-  you can call bM_SendMessage() to control switching.
+  you can call `bM_SendMessage()` to control switching.
   
   for example:
-  
+```c  
   bM_SendMessage(BM_OPERATE_NEXT, 0);   // to show the next item 
   
   bM_SendMessage(BM_OPERATE_JUMP_TO, USER_ID_ITEM5);   //to show the item5
-  
+```  
   
   
   Ok! you can try it by yourself now!
   
   if you have some suggestion, please contact me.
-  email: notrynohigh@outlook.com
+  `email: notrynohigh@outlook.com`
   
   
   Thanks! 
 
-/***************************************************************/
+
 
 
 
