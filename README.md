@@ -20,7 +20,7 @@ for example:<br>
                           |
                           item10
   it's a four levels menu. then, divide it:<br>
-  create four objects by bM_CreateObject();<br>
+  create four objects by `bM_CreateObject();`<br>
   add items and creating UI function to the object by `bM_AddItemToObject()`;<br>
   
   object1 {item1----item2----item3----item4}<br>
