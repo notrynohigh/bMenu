@@ -1,6 +1,6 @@
 /*****************************************************************************
 * MIT License
-* File: bMenu.h  Version: v0.0.1
+* File: bMenu.h  Version: v0.1.1
 * Copyright (c) [2017-2018] [Bean  email: notrynohigh@outlook.com]
 
 * Permission is hereby granted, free of charge, to any person obtaining a copy

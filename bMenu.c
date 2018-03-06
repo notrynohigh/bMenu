@@ -1,6 +1,6 @@
 /*****************************************************************************
  * MIT License
- * File: bMenu.c  Version: v0.0.1
+ * File: bMenu.c  Version: v0.1.1
  * Copyright (c) [2017-2018] [Bean  email: notrynohigh@outlook.com]
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -50,7 +50,7 @@ static bM_bool_t g_bM_Semaphor = BM_FALSE;
  * private defined
  ******************************************************************************/
  /* bM module version number */
-#define bM_VERSION    "V0.0.1"
+#define bM_VERSION    "V0.1.1"
 
  /******************************************************************************
  * private typedef
@@ -614,7 +614,7 @@ bM_Result_t bM_ChangeVisibleStatus(bM_ID id, bM_bool_t visible)
 	}
 	if (gp_bM_MenuEntryPoint->pFirstItem != bM_NULL)
 	{
-		if (_bM_GetIdFromHandle(gp_bM_MenuEntryPoint->pFirstItem, BM_ID_USER) == id)
+		if (_bM_GetIdFromHandle(gp_bM_MenuEntryPoint->pFirstItem->handle, BM_ID_USER) == id)
 		{
 			bM_Debug("sorry, cant set for entry first item !\n\r");
 			return BM_ERROR;
